@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Journal</title>
+
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: linear-gradient(135deg, #fff0f5, #e6f7ef);
+      font-family: Arial, sans-serif;
+    }
+    .card {
+      width: 90%;
+      max-width: 460px;
+      padding: 30px 24px;
+      text-align: center;
+      background: #fffdf8;
+      border-radius: 28px;
+      box-shadow: 0 8px 24px rgba(200, 120, 150, 0.2);
+    }
+    h1 { color: #2f4a3a; margin: 0 0 6px; }
+    #today { color: #7a8f82; margin-bottom: 18px; }
+
+    .moods { display: flex; justify-content: center; gap: 10px; margin: 10px 0 18px; }
+    .mood {
+      font-size: 24px; width: 48px; height: 48px;
+      background: #fff0f5; border: 2px solid transparent;
+      border-radius: 50%; cursor: pointer;
+    }
+    .mood.selected { border-color: #7fd1ae; background: #e6f7ef; }
+
+    textarea {
+      width: 100%; box-sizing: border-box;
+      height: 160px; padding: 12px;
+      border: 2px solid #ebc9d3; border-radius: 16px;
+      font-size: 15px; font-family: inherit; resize: none;
+    }
+    textarea:focus { outline: none; border-color: #7fd1ae; }
+
+    .button {
+      display: inline-block; margin-top: 16px;
+      padding: 10px 22px; border-radius: 999px;
+      background: #e8799b; color: white; text-decoration: none;
+    }
+    .save-btn {
+  margin-top: 14px; padding: 10px 22px;
+  border: none; border-radius: 999px;
+  background: #7fd1ae; color: white;
+  font-size: 15px; cursor: pointer;
+  }
+  save-msg { color: #7a8f82; font-size: 13px; min-height: 18px; }
+  .past-title { color: #2f4a3a; font-size: 18px; margin-top: 24px; }
+.entry {
+  text-align: left; background: #fff0f5;
+  border-radius: 14px; padding: 10px 14px; margin-bottom: 10px;
+}
+.entry .date { font-size: 12px; color: #7a8f82; }
+.entry .text { margin: 4px 0 0; font-size: 14px; color: #2f4a3a; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>My Journal 📓</h1>
+    <p id="today"></p>
+
+    <p>How do you feel today?</p>
+    <div class="moods">
+      <button class="mood" data-mood="Happy">😊</button>
+      <button class="mood" data-mood="Calm">😌</button>
+      <button class="mood" data-mood="Tired">😴</button>
+      <button class="mood" data-mood="Sad">😢</button>
+      <button class="mood" data-mood="Motivated">🔥</button>
+    </div>
+
+    <textarea placeholder="Write about your day..."></textarea>
+    <br>
+    <button class="save-btn" id="save">💾 Save Entry</button>
+    <p id="save-msg"></p>
+    <h2 class="past-title">📖 Past Entries</h2>
+    <div id="entries"></div>
+    <a class="button" href="home.html">← Back Home</a>
+  </div>
+
+  <script>
+    const today = new Date();
+document.getElementById('today').textContent =
+  today.toLocaleDateString('en-US', {
+    weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
+  });
+
+const moods = document.querySelectorAll('.mood');
+const textarea = document.querySelector('textarea');
+const saveMsg = document.getElementById('save-msg');
+const key = 'diary-' + today.toDateString();
+let selectedMood = '';
+
+function selectMood(name) {
+  selectedMood = name;
+  moods.forEach(b => b.classList.toggle('selected', b.dataset.mood === name));
+}
+
+moods.forEach(btn => {
+  btn.addEventListener('click', () => selectMood(btn.dataset.mood));
+});
+
+document.getElementById('save').addEventListener('click', () => {
+  const entry = { mood: selectedMood, text: textarea.value };
+  localStorage.setItem(key, JSON.stringify(entry));
+  saveMsg.textContent = 'Saved ✨';
+  renderEntries();
+  });
+
+const saved = localStorage.getItem(key);
+if (saved) {
+  const entry = JSON.parse(saved);
+  textarea.value = entry.text;
+  selectMood(entry.mood);
+}
+const moodEmoji = {
+  Happy: '😊', Calm: '😌', Tired: '😴', Sad: '😢', Motivated: '🔥'
+};
+
+function renderEntries() {
+  const box = document.getElementById('entries');
+  box.innerHTML = '';
+
+  const list = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k.startsWith('diary-')) {
+      const data = JSON.parse(localStorage.getItem(k));
+      list.push({ date: new Date(k.slice(6)), mood: data.mood, text: data.text });
+    }
+  }
+
+  list.sort((a, b) => b.date - a.date);
+
+  if (list.length === 0) {
+    box.textContent = 'No entries yet~';
+    return;
+  }
+
+  list.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'entry';
+
+    const d = document.createElement('div');
+    d.className = 'date';
+    d.textContent = (moodEmoji[item.mood] || '📝') + ' ' +
+      item.date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+    const p = document.createElement('p');
+    p.className = 'text';
+    p.textContent = item.text;
+
+    div.appendChild(d);
+    div.appendChild(p);
+    box.appendChild(div);
+  });
+}
+
+renderEntries();
+  </script>
+</body>
+</html>
